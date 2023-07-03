@@ -559,7 +559,8 @@
          "description": "Dynamische Fahrtziel-Anzeiger zeigen Echtzeit-Informationen über das Ziel ein- bzw. abfahrender Züge/Busse an einem Bahn-/Bussteig an.",
          "image": [
             "assets/images/questions/platform_departures_board_1.jpg",
-            "assets/images/questions/platform_departures_board_2.jpg"
+            "assets/images/questions/platform_departures_board_2.jpg",
+            "assets/images/questions/platform_departures_board_3.jpg"
          ]
       },
       "answer": {
@@ -798,7 +799,13 @@
             "unit": "Centimeter"
          },
          "constructor": {
-            "height": ["CONCAT", "$input", " cm"]
+            "height": [
+               "REPLACE", "/\\.?0{1,2}$/", "", [
+                  "INSERT", ".", "-2", [
+                     "PAD", "0", "3", "$input"
+                  ]
+               ]
+            ]
          }
       },
       "conditions": [
@@ -830,13 +837,13 @@
          "type": "Number",
          "input": {
             "placeholder": "Plattform-Breite",
-            "decimals": 0,
-            "min": 30,
-            "max": 1500,
-            "unit": "Centimeter"
+            "decimals": 2,
+            "min": 0,
+            "max": 15,
+            "unit": "Meter"
          },
          "constructor": {
-            "width": ["CONCAT", "$input", " cm"]
+            "width": ["$input"]
          }
       },
       "conditions": [
@@ -942,7 +949,10 @@
          "id": 1211,
          "name": "Rampen-Länge",
          "text": "Wie lang ist die bewegbare Rollstuhl-Rampe?",
-         "description": "Bahnsteiggebundene Rampen sind bewegbar und helfen beim Ein- und Ausstieg von Rollstuhlfahrenden zur Überwindung eines Spalts bzw. von Stufen."
+         "description": "Bahnsteiggebundene Rampen sind bewegbar und helfen beim Ein- und Ausstieg von Rollstuhlfahrenden zur Überwindung eines Spalts bzw. von Stufen.",
+         "image": [
+            "assets/images/questions/wheelchair_ramp_1.jpg"
+         ]
       },
       "answer": {
          "type": "Number",
@@ -954,7 +964,13 @@
             "unit": "Centimeter"
          },
          "constructor": {
-            "wheelchair:portable_ramp:length": ["CONCAT", "$input", " cm"]
+            "wheelchair:portable_ramp:length": [
+               "REPLACE", "/\\.?0{1,2}$/", "", [
+                  "INSERT", ".", "-2", [
+                     "PAD", "0", "3", "$input"
+                  ]
+               ]
+            ]
          }
       },
       "conditions": [
@@ -971,7 +987,10 @@
          "id": 1212,
          "name": "Rampen-Tragfähigkeit",
          "text": "Was ist die maximale Tragfähigkeit der bewegbaren Rampe?",
-         "description": "Bahnsteiggebundene Rampen sind bewegbar und helfen beim Ein- und Ausstieg von Rollstuhlfahrenden zur Überwindung eines Spalts bzw. von Stufen."
+         "description": "Bahnsteiggebundene Rampen sind bewegbar und helfen beim Ein- und Ausstieg von Rollstuhlfahrenden zur Überwindung eines Spalts bzw. von Stufen.",
+         "image": [
+            "assets/images/questions/wheelchair_ramp_1.jpg"
+         ]
       },
       "answer": {
          "type": "Number",
@@ -1045,6 +1064,7 @@
          "text": "Wie lang ist die Stellfläche des bewegbaren Hublifts?",
          "description": "Bahnsteiggebundene Hublifte sind bewegbar und helfen beim Ein- und Ausstieg von Rollstuhlfahrenden zur Überwindung eines Spalts bzw. von Stufen.",
          "image": [
+            "assets/images/questions/wheelchair_lift_1.jpg",
             "assets/images/questions/wheelchair_lift_2.jpg"
          ]
       },
@@ -1058,7 +1078,13 @@
             "unit": "Centimeter"
          },
          "constructor": {
-            "wheelchair:portable_lift:length": ["CONCAT", "$input", " cm"]
+            "wheelchair:portable_lift:length": [
+               "REPLACE", "/\\.?0{1,2}$/", "", [
+                  "INSERT", ".", "-2", [
+                     "PAD", "0", "3", "$input"
+                  ]
+               ]
+            ]
          }
       },
       "conditions": [
@@ -1077,6 +1103,7 @@
          "text": "Was ist die maximale Tragfähigkeit der bewegbaren Hublifts?",
          "description": "Bahnsteiggebundene Hublifte sind bewegbar und helfen beim Ein- und Ausstieg von Rollstuhlfahrenden zur Überwindung eines Spalts bzw. von Stufen.",
          "image": [
+            "assets/images/questions/wheelchair_lift_1.jpg",
             "assets/images/questions/wheelchair_lift_2.jpg"
          ]
       },
@@ -1440,7 +1467,13 @@
             "unit": "Centimeter"
          },
          "constructor": {
-            "width": ["CONCAT", "$input", " cm"]
+            "width": [
+               "REPLACE", "/\\.?0{1,2}$/", "", [
+                  "INSERT", ".", "-2", [
+                     "PAD", "0", "3", "$input"
+                  ]
+               ]
+            ]
          }
       },
       "conditions": [
@@ -1540,6 +1573,10 @@
                "surface": false,
                "indoor": ["no", false]
             },
+            "!osm_tags": {
+               "access": ["no","private"],
+               "foot": ["no", "private"]
+            },
             "osm_element": [
                "OpenWay",
                "ClosedWay"
@@ -1551,6 +1588,10 @@
                "foot": ["yes", "designated"],
                "surface": false,
                "indoor": ["no", false]
+            },
+            "!osm_tags": {
+               "access": ["no","private"],
+               "foot": ["no", "private"]
             },
             "osm_element": [
                "OpenWay",
@@ -1670,7 +1711,13 @@
             "unit": "Centimeter"
          },
          "constructor": {
-            "maxwidth:physical": ["CONCAT", "$input", " cm"]
+            "maxwidth:physical": [
+               "REPLACE", "/\\.?0{1,2}$/", "", [
+                  "INSERT", ".", "-2", [
+                     "PAD", "0", "3", "$input"
+                  ]
+               ]
+            ]
          }
       },
       "conditions": [
@@ -1707,7 +1754,13 @@
             "unit": "Centimeter"
          },
          "constructor": {
-            "opening": ["CONCAT", "$input", " cm"]
+            "opening": [
+               "REPLACE", "/\\.?0{1,2}$/", "", [
+                  "INSERT", ".", "-2", [
+                     "PAD", "0", "3", "$input"
+                  ]
+               ]
+            ]
          }
       },
       "conditions": [
@@ -1744,7 +1797,13 @@
             "unit": "Centimeter"
          },
          "constructor": {
-            "spacing": ["CONCAT", "$input", " cm"]
+            "spacing": [
+               "REPLACE", "/\\.?0{1,2}$/", "", [
+                  "INSERT", ".", "-2", [
+                     "PAD", "0", "3", "$input"
+                  ]
+               ]
+            ]
          }
       },
       "conditions": [
@@ -1791,6 +1850,10 @@
                "wheelchair:lift": false,
                "conveying": [false, "no"]
             },
+            "!osm_tags": {
+               "access": ["no","private"],
+               "foot": ["no", "private"]
+            },
             "osm_element": "OpenWay"
          }
       ]
@@ -1815,7 +1878,13 @@
             "unit": "Centimeter"
          },
          "constructor": {
-            "wheelchair:lift:length": ["CONCAT", "$input", " cm"]
+            "wheelchair:lift:length": [
+               "REPLACE", "/\\.?0{1,2}$/", "", [
+                  "INSERT", ".", "-2", [
+                     "PAD", "0", "3", "$input"
+                  ]
+               ]
+            ]
          }
       },
       "conditions": [
@@ -1847,7 +1916,13 @@
             "unit": "Centimeter"
          },
          "constructor": {
-            "length": ["CONCAT", "$input", " cm"]
+            "length": [
+               "REPLACE", "/\\.?0{1,2}$/", "", [
+                  "INSERT", ".", "-2", [
+                     "PAD", "0", "3", "$input"
+                  ]
+               ]
+            ]
          }
       },
       "conditions": [
@@ -1880,7 +1955,13 @@
             "unit": "Centimeter"
          },
          "constructor": {
-            "wheelchair:lift:width": ["CONCAT", "$input", " cm"]
+            "wheelchair:lift:width": [
+               "REPLACE", "/\\.?0{1,2}$/", "", [
+                  "INSERT", ".", "-2", [
+                     "PAD", "0", "3", "$input"
+                  ]
+               ]
+            ]
          }
       },
       "conditions": [
@@ -1912,7 +1993,13 @@
             "unit": "Centimeter"
          },
          "constructor": {
-            "width": ["CONCAT", "$input", " cm"]
+            "width": [
+               "REPLACE", "/\\.?0{1,2}$/", "", [
+                  "INSERT", ".", "-2", [
+                     "PAD", "0", "3", "$input"
+                  ]
+               ]
+            ]
          }
       },
       "conditions": [
@@ -2004,7 +2091,13 @@
             "unit": "Centimeter"
          },
          "constructor": {
-            "step:height": ["CONCAT", "$input", " cm"]
+            "step:height": [
+               "REPLACE", "/\\.?0{1,2}$/", "", [
+                  "INSERT", ".", "-2", [
+                     "PAD", "0", "3", "$input"
+                  ]
+               ]
+            ]
          }
       },
       "conditions": [
@@ -2013,6 +2106,10 @@
                "highway": "steps",
                "conveying": [false, "no"],
                "step:height": false
+            },
+            "!osm_tags": {
+               "access": ["no","private"],
+               "foot": ["no", "private"]
             },
             "osm_element": "OpenWay"
          }
@@ -2042,6 +2139,10 @@
                "highway": "steps",
                "conveying": [false, "no"],
                "step_count": false
+            },
+            "!osm_tags": {
+               "access": ["no","private"],
+               "foot": ["no", "private"]
             },
             "osm_element": "OpenWay"
          }
@@ -2113,6 +2214,10 @@
                "highway": "steps",
                "conveying": [false, "no"],
                "handrail": false
+            },
+            "!osm_tags": {
+               "access": ["no","private"],
+               "foot": ["no", "private"]
             }
          }
       ]
