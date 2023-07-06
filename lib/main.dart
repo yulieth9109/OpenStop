@@ -5,6 +5,7 @@ import 'package:get_it/get_it.dart';
 import 'package:mobx/mobx.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:intl/intl.dart';
 
 import '/commons/themes.dart';
 import '/commons/app_config.dart' as app_config;
@@ -20,6 +21,8 @@ Future <void> main() async {
 
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
+  String Locale = Intl.getCurrentLocale().substring(0, 2);
+
   final futures = await Future.wait([
     AppWorkerInterface.spawn(),
     SharedPreferences.getInstance(),
@@ -34,7 +37,8 @@ Future <void> main() async {
   // https://github.com/flutter/flutter/issues/96895
   Future.wait([
     rootBundle.load('assets/datasets/map_feature_collection.json'),
-    rootBundle.load('assets/datasets/question_catalog.json'),
+    rootBundle.load('assets/question_catalog/definition.json'),
+    rootBundle.load('assets/question_catalog/locales/$Locale.arb'),
   ]).then(GetIt.I.get<AppWorkerInterface>().passAssets);
 
   reaction((p0) => GetIt.I.get<PreferencesService>().isProfessional, (value) {
