@@ -5,14 +5,14 @@ import 'package:get_it/get_it.dart';
 import 'package:mobx/mobx.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:intl/intl.dart';
+import 'dart:ui' as ui;
 
 import '/commons/themes.dart';
 import '/commons/app_config.dart' as app_config;
 import '/commons/routes.dart';
 import '/api/preferences_service.dart';
 import '/api/app_worker/app_worker_interface.dart';
-
+import 'models/question_catalog/question_catalog_reader.dart';
 
 Future <void> main() async {
   // this is required to run flutter dependent code before runApp is called
@@ -21,25 +21,32 @@ Future <void> main() async {
 
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
-  String Locale = Intl.getCurrentLocale().substring(0, 2);
-
   final futures = await Future.wait([
     AppWorkerInterface.spawn(),
     SharedPreferences.getInstance(),
   ]);
 
-  GetIt.I.registerSingleton<AppWorkerInterface>(futures[0] as AppWorkerInterface);
+  final QuestionCatalogReader questionCatalogReader = QuestionCatalogReader();
+
+  ui.PlatformDispatcher.instance.onLocaleChanged = () async {
+    await questionCatalogReader.read();
+  };
+
+
+
+  GetIt.I
+      .registerSingleton<AppWorkerInterface>(futures[0] as AppWorkerInterface);
   GetIt.I.registerSingleton<PreferencesService>(
     PreferencesService(preferences: futures[1] as SharedPreferences),
   );
 
+  
+  GetIt.I.get<AppWorkerInterface>().updateQuestionCatalog(questionCatalog: await questionCatalogReader.read(),);
+
   // required because isolate cannot read assets
   // https://github.com/flutter/flutter/issues/96895
-  Future.wait([
-    rootBundle.load('assets/datasets/map_feature_collection.json'),
-    rootBundle.load('assets/question_catalog/definition.json'),
-    rootBundle.load('assets/question_catalog/locales/$Locale.arb'),
-  ]).then(GetIt.I.get<AppWorkerInterface>().passAssets);
+  Future.wait([rootBundle.load('assets/datasets/map_feature_collection.json')])
+      .then(GetIt.I.get<AppWorkerInterface>().passAssets);
 
   reaction((p0) => GetIt.I.get<PreferencesService>().isProfessional, (value) {
     GetIt.I.get<AppWorkerInterface>().updateQuestionCatalogPreferences(
@@ -49,7 +56,6 @@ Future <void> main() async {
 
   runApp(const MyApp());
 }
-
 
 class MyApp extends StatelessObserverWidget {
   const MyApp({super.key});
