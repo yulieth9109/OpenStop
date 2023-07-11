@@ -1,33 +1,15 @@
 import 'dart:async';
 import 'dart:convert';
-
-import 'package:flutter/services.dart';
-
 import '/utils/service_worker.dart';
 import '/models/question_catalog/question_catalog.dart';
 
 mixin QuestionCatalogHandler<M> on ServiceWorker<M> {
   static final _completer = Completer<QuestionCatalog>();
 
-  void takeQuestionCatalogAsset(ByteData data, ByteData dataT) {
-    final questionCatalogTranslations =
-        json.decode(utf8.decode(dataT.buffer.asUint8List()));
-    final jsonString = utf8.decode(data.buffer.asUint8List());
-    final jsonData = json.decode(
-      jsonString,
-      reviver: (key, value) {
-        if (value is String && value.startsWith('@')) {
-          if (questionCatalogTranslations[value.substring(1)] != null) {
-            return questionCatalogTranslations[value.substring(1)];
-          } else {
-            return value;
-          }
-        } else {
-          return value;
-        }
-      },
-    );
-
+  void takeQuestionCatalogAsset(String questionCatalog) {
+    //final jsonString = utf8.decode(data.buffer.asUint8List());
+    final jsonData = json.decode(questionCatalog);
+    print("Hola");
     _completer.complete(
         QuestionCatalog.fromJson(jsonData.cast<Map<String, dynamic>>()));
   }

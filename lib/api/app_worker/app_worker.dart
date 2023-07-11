@@ -17,16 +17,20 @@ import 'questionnaire_handler.dart';
 /// The isolate persists so it can cache any queried or processed data.
 
 class AppWorker extends ServiceWorker<AppWorkerMessage>
-  with MapFeatureHandler, QuestionCatalogHandler, StopAreaHandler, ElementHandler, QuestionnaireHandler {
-
+    with
+        MapFeatureHandler,
+        QuestionCatalogHandler,
+        StopAreaHandler,
+        ElementHandler,
+        QuestionnaireHandler {
   AppWorker(super.sendPort);
 
   @override
   Future<dynamic> messageHandler(message) async {
-    switch(message.subject) {
+    switch (message.subject) {
       case AppWorkerSubject.passAssets:
         takeMapFeatureCollectionAsset(message.data[0]);
-        takeQuestionCatalogAsset(message.data[1],message.data[2]);
+        //takeQuestionCatalogAsset(message.data[1]);
         return;
 
       case AppWorkerSubject.queryStopAreas:
@@ -53,19 +57,24 @@ class AppWorker extends ServiceWorker<AppWorkerMessage>
         return jumpToQuestion(message.data);
 
       case AppWorkerSubject.updateQuestionCatalogPreferences:
-        return updateQuestionCatalogPreferences(excludeProfessional: message.data);
+        return updateQuestionCatalogPreferences(
+            excludeProfessional: message.data);
+
+      case AppWorkerSubject.questionCatalog:
+        return takeQuestionCatalogAsset(message.data);
 
       case AppWorkerSubject.dispose:
         return exit();
 
       default:
-        throw UnimplementedError('The given message subject is not implemented');
+        throw UnimplementedError(
+            'The given message subject is not implemented');
     }
   }
 
   @override
   Stream subscriptionHandler(subscription) {
-    switch(subscription.subject) {
+    switch (subscription.subject) {
       case AppWorkerSubject.subscribeStopAreas:
         return stopAreasStream;
       case AppWorkerSubject.subscribeLoadingChunks:
@@ -75,11 +84,11 @@ class AppWorker extends ServiceWorker<AppWorkerMessage>
       case AppWorkerSubject.subscribeQuestionnaireChanges:
         return activeQuestionnaireStream;
       default:
-        throw UnimplementedError('The given subscription subject is not implemented');
+        throw UnimplementedError(
+            'The given subscription subject is not implemented');
     }
   }
 }
-
 
 enum AppWorkerSubject {
   passAssets,
@@ -103,13 +112,14 @@ enum AppWorkerSubject {
 
   updateQuestionCatalogPreferences,
 
+  questionCatalog,
+
   dispose,
 }
-
 
 class AppWorkerMessage {
   final AppWorkerSubject subject;
   final dynamic data;
 
-  AppWorkerMessage(this.subject, [ this.data ]);
+  AppWorkerMessage(this.subject, [this.data]);
 }

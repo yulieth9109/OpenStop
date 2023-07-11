@@ -5,51 +5,60 @@ import 'package:get_it/get_it.dart';
 import 'package:mobx/mobx.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:intl/intl.dart';
+import 'dart:ui' as ui;
 
 import '/commons/themes.dart';
 import '/commons/app_config.dart' as app_config;
 import '/commons/routes.dart';
 import '/api/preferences_service.dart';
 import '/api/app_worker/app_worker_interface.dart';
+import 'models/question_catalog/question_catalog_reader.dart';
 
-
-Future <void> main() async {
+Future<void> main() async {
   // this is required to run flutter dependent code before runApp is called
   // in this case SharedPreferences requires this
   WidgetsFlutterBinding.ensureInitialized();
 
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
-  String Locale = Intl.getCurrentLocale().substring(0, 2);
-
   final futures = await Future.wait([
     AppWorkerInterface.spawn(),
     SharedPreferences.getInstance(),
   ]);
 
-  GetIt.I.registerSingleton<AppWorkerInterface>(futures[0] as AppWorkerInterface);
+  final QuestionCatalogReader questionCatalogReader = QuestionCatalogReader();
+  String questionC = await questionCatalogReader.read();
+
+  ui.PlatformDispatcher.instance.onLocaleChanged = () async {
+    print('Caching change');
+    questionC = await questionCatalogReader.read();
+  };
+
+  GetIt.I
+      .registerSingleton<AppWorkerInterface>(futures[0] as AppWorkerInterface);
   GetIt.I.registerSingleton<PreferencesService>(
     PreferencesService(preferences: futures[1] as SharedPreferences),
   );
 
+  
+  GetIt.I.get<AppWorkerInterface>().readQuestionCatalog(
+        questionCatalog: questionC,
+      );
+
   // required because isolate cannot read assets
   // https://github.com/flutter/flutter/issues/96895
-  Future.wait([
-    rootBundle.load('assets/datasets/map_feature_collection.json'),
-    rootBundle.load('assets/question_catalog/definition.json'),
-    rootBundle.load('assets/question_catalog/locales/$Locale.arb'),
-  ]).then(GetIt.I.get<AppWorkerInterface>().passAssets);
+  Future.wait([rootBundle.load('assets/datasets/map_feature_collection.json')])
+      .then(GetIt.I.get<AppWorkerInterface>().passAssets);
 
-  reaction((p0) => GetIt.I.get<PreferencesService>().isProfessional, (value) {
+  reaction((p0) => GetIt.I.get<PreferencesService>().isProfessional,
+      (value) async {
     GetIt.I.get<AppWorkerInterface>().updateQuestionCatalogPreferences(
-      excludeProfessional: !value,
-    );
+          excludeProfessional: !value,
+        );
   }, fireImmediately: true);
 
   runApp(const MyApp());
 }
-
 
 class MyApp extends StatelessObserverWidget {
   const MyApp({super.key});
@@ -66,7 +75,8 @@ class MyApp extends StatelessObserverWidget {
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       // used instead of home: because otherwise no pop page transition to the first screen will be applied
-      onGenerateRoute: (settings) => hasSeenOnboarding ? Routes.home : Routes.onboarding,
+      onGenerateRoute: (settings) =>
+          hasSeenOnboarding ? Routes.home : Routes.onboarding,
       theme: lightTheme,
       darkTheme: darkTheme,
       highContrastTheme: highContrastLightTheme,
