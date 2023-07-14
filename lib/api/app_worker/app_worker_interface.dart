@@ -95,7 +95,6 @@ class AppWorkerInterface extends Service implements Disposable {
       answer,
     ));
   }
-
   Future<void> closeQuestionnaire() {
     return _worker.send<void>(AppWorkerMessage(
       AppWorkerSubject.closeQuestionnaire,
