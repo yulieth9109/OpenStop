@@ -1390,13 +1390,6 @@
                "osm_tags": {
                   "automatic_door": "button"
                }
-            },
-            {
-               "name": "Automatik-Drehtür",
-               "image": "assets/question_catalog/images/door_revolving.jpg",
-               "osm_tags": {
-                  "automatic_door": "continuous"
-               }
             }
          ]
       },

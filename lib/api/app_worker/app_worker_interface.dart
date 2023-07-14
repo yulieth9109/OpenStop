@@ -114,9 +114,9 @@ class AppWorkerInterface extends Service implements Disposable {
     required Locale locale,
   }) {
     return _worker.send<void>(AppWorkerMessage(AppWorkerSubject.uploadQuestionnaire, ElementUploadData(
-          user: user,
-          locale: locale,
-        )));
+      user: user,
+      locale: locale,
+    )));
   }
 
   Future<void> nextQuestion() {

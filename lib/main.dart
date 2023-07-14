@@ -14,7 +14,7 @@ import '/api/preferences_service.dart';
 import '/api/app_worker/app_worker_interface.dart';
 import 'models/question_catalog/question_catalog_reader.dart';
 
-Future<void> main() async {
+Future <void> main() async {
   // this is required to run flutter dependent code before runApp is called
   // in this case SharedPreferences requires this
   WidgetsFlutterBinding.ensureInitialized();
@@ -48,7 +48,7 @@ Future<void> main() async {
   Future.wait([rootBundle.load('assets/datasets/map_feature_collection.json')])
       .then(GetIt.I.get<AppWorkerInterface>().passAssets);
 
-  reaction((p0) => GetIt.I.get<PreferencesService>().isProfessional, (value) async {
+  reaction((p0) => GetIt.I.get<PreferencesService>().isProfessional, (value) {
     GetIt.I.get<AppWorkerInterface>().updateQuestionCatalogPreferences(
       excludeProfessional: !value,
     );

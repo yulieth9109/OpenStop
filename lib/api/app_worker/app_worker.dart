@@ -22,7 +22,7 @@ class AppWorker extends ServiceWorker<AppWorkerMessage>
 
   @override
   Future<dynamic> messageHandler(message) async {
-    switch (message.subject) {
+    switch(message.subject) {
       case AppWorkerSubject.passAssets:
         takeMapFeatureCollectionAsset(message.data[0]);
         return;
@@ -66,7 +66,7 @@ class AppWorker extends ServiceWorker<AppWorkerMessage>
 
   @override
   Stream subscriptionHandler(subscription) {
-    switch (subscription.subject) {
+    switch(subscription.subject) {
       case AppWorkerSubject.subscribeStopAreas:
         return stopAreasStream;
       case AppWorkerSubject.subscribeLoadingChunks:
