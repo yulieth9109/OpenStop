@@ -1,84 +1,53 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'question_catalog.dart';
+
 class QuestionCatalogReader {
-  String deviceLocale = Platform.localeName;
-  final defaultLocate = 'en';
+  late Locale deviceLocale;
+  final String defaultLocate;
 
-  Future<String> read() async {
-    dynamic jsonStringQuestionCatalog;
-    dynamic localizationsDeviceLanguage;
-    dynamic localizationsLanguageCode;
-    dynamic localizationsDefaultLanguage;
-    dynamic questionCatalog = '';
+  QuestionCatalogReader({this.defaultLocate = 'en'});
 
-    await readFile(0).then((jsonMap) {
-      jsonStringQuestionCatalog = jsonMap;
-    });
+  Locale get _deviceLocale => PlatformDispatcher.instance.locale;
 
-    await readFile(1).then((jsonMap) {
-      localizationsDeviceLanguage = jsonMap;
-    });
-    await readFile(2).then((jsonMap) {
-      localizationsLanguageCode = jsonMap;
-    });
-    await readFile(3).then((jsonMap) {
-      localizationsDefaultLanguage = jsonMap;
-    });
+  Future<QuestionCatalog> read() async {
+    final locales = await Future.wait([
+      _readFile('assets/question_catalog/locales/$_deviceLocale.arb'),
+      _readFile(
+          'assets/question_catalog/locales/${_deviceLocale.languageCode}.arb'),
+      _readFile('assets/question_catalog/locales/$defaultLocate.arb')
+    ]);
 
-    if (jsonStringQuestionCatalog != null) {
-      questionCatalog =
-          json.decode(jsonStringQuestionCatalog, reviver: (key, value) {
-        if (value is String) {
-          if (value.startsWith('@')) {
-            if (localizationsDeviceLanguage is Map &&
-                localizationsDeviceLanguage[value.substring(1)] != null) {
-              return localizationsDeviceLanguage[value.substring(1)];
-            } else if (localizationsLanguageCode is Map &&
-                localizationsLanguageCode[value.substring(1)] != null) {
-              return localizationsLanguageCode[value.substring(1)];
-            } else if (localizationsDefaultLanguage is Map &&
-                localizationsDefaultLanguage[value.substring(1)] != null) {
-              return localizationsDefaultLanguage![value.substring(1)];
+    final questionCatalog = await _readFile(
+        'assets/question_catalog/definition.json', (key, value) {
+      if (value is String) {
+        if (value.startsWith('@')) {
+          for (final languagefiles in locales) {
+            final localeString = languagefiles[value.substring(1)];
+            if (localeString != null) {
+              return localeString;
             }
           }
         }
-        return value;
-      });
-    }
-    return json.encode(questionCatalog);
+      }
+      return value;
+    });
+
+    return QuestionCatalog.fromJson(questionCatalog.cast<Map<String, dynamic>>());
   }
 
-  Future<dynamic> readFile(int number) async {
-    ByteData jsonData;
-    print('systemLocale $deviceLocale');
+  Future<dynamic> _readFile(String path,
+      [Object? Function(Object? key, Object? value)? reviver]) async {
+
     try {
-      switch (number) {
-        case 0:
-          jsonData =
-              await rootBundle.load('assets/question_catalog/definition.json');
-          return utf8.decode(jsonData.buffer.asUint8List());
-        case 1:
-          jsonData = await rootBundle
-              .load('assets/question_catalog/locales/$deviceLocale.arb');
-          return json.decode(utf8.decode(jsonData.buffer.asUint8List()));
-        case 2:
-          final languageCode = deviceLocale.substring(0, 2);
-          print('languageCode $languageCode');
-          jsonData = await rootBundle
-              .load('assets/question_catalog/locales/$languageCode.arb');
-          return json.decode(utf8.decode(jsonData.buffer.asUint8List()));
-        case 3:
-          jsonData = await rootBundle
-              .load('assets/question_catalog/locales/$defaultLocate.arb');
-          return json.decode(utf8.decode(jsonData.buffer.asUint8List()));
-      }
+      final jsonData = await rootBundle.load(path);
+      return json.decode(utf8.decode(jsonData.buffer.asUint8List()), reviver: reviver);
     } catch (e) {
-      debugPrint(e.toString());
-      return null;
+      return const <String, dynamic>{};
     }
   }
 }

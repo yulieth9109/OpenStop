@@ -17,12 +17,7 @@ import 'questionnaire_handler.dart';
 /// The isolate persists so it can cache any queried or processed data.
 
 class AppWorker extends ServiceWorker<AppWorkerMessage>
-    with
-        MapFeatureHandler,
-        QuestionCatalogHandler,
-        StopAreaHandler,
-        ElementHandler,
-        QuestionnaireHandler {
+    with MapFeatureHandler, QuestionCatalogHandler, StopAreaHandler, ElementHandler, QuestionnaireHandler {
   AppWorker(super.sendPort);
 
   @override
@@ -30,7 +25,6 @@ class AppWorker extends ServiceWorker<AppWorkerMessage>
     switch (message.subject) {
       case AppWorkerSubject.passAssets:
         takeMapFeatureCollectionAsset(message.data[0]);
-        //takeQuestionCatalogAsset(message.data[1]);
         return;
 
       case AppWorkerSubject.queryStopAreas:
@@ -57,18 +51,16 @@ class AppWorker extends ServiceWorker<AppWorkerMessage>
         return jumpToQuestion(message.data);
 
       case AppWorkerSubject.updateQuestionCatalogPreferences:
-        return updateQuestionCatalogPreferences(
-            excludeProfessional: message.data);
+        return updateQuestionCatalogPreferences(excludeProfessional: message.data);
 
-      case AppWorkerSubject.questionCatalog:
+      case AppWorkerSubject.updateQuestionCatalog:
         return takeQuestionCatalogAsset(message.data);
 
       case AppWorkerSubject.dispose:
         return exit();
 
       default:
-        throw UnimplementedError(
-            'The given message subject is not implemented');
+        throw UnimplementedError('The given message subject is not implemented');
     }
   }
 
@@ -84,8 +76,7 @@ class AppWorker extends ServiceWorker<AppWorkerMessage>
       case AppWorkerSubject.subscribeQuestionnaireChanges:
         return activeQuestionnaireStream;
       default:
-        throw UnimplementedError(
-            'The given subscription subject is not implemented');
+        throw UnimplementedError('The given subscription subject is not implemented');
     }
   }
 }
@@ -112,7 +103,7 @@ enum AppWorkerSubject {
 
   updateQuestionCatalogPreferences,
 
-  questionCatalog,
+  updateQuestionCatalog,
 
   dispose,
 }

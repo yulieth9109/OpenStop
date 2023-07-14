@@ -27,12 +27,12 @@ Future<void> main() async {
   ]);
 
   final QuestionCatalogReader questionCatalogReader = QuestionCatalogReader();
-  String questionC = await questionCatalogReader.read();
 
   ui.PlatformDispatcher.instance.onLocaleChanged = () async {
-    print('Caching change');
-    questionC = await questionCatalogReader.read();
+    await questionCatalogReader.read();
   };
+
+
 
   GetIt.I
       .registerSingleton<AppWorkerInterface>(futures[0] as AppWorkerInterface);
@@ -41,20 +41,17 @@ Future<void> main() async {
   );
 
   
-  GetIt.I.get<AppWorkerInterface>().readQuestionCatalog(
-        questionCatalog: questionC,
-      );
+  GetIt.I.get<AppWorkerInterface>().updateQuestionCatalog(questionCatalog: await questionCatalogReader.read(),);
 
   // required because isolate cannot read assets
   // https://github.com/flutter/flutter/issues/96895
   Future.wait([rootBundle.load('assets/datasets/map_feature_collection.json')])
       .then(GetIt.I.get<AppWorkerInterface>().passAssets);
 
-  reaction((p0) => GetIt.I.get<PreferencesService>().isProfessional,
-      (value) async {
+  reaction((p0) => GetIt.I.get<PreferencesService>().isProfessional, (value) async {
     GetIt.I.get<AppWorkerInterface>().updateQuestionCatalogPreferences(
-          excludeProfessional: !value,
-        );
+      excludeProfessional: !value,
+    );
   }, fireImmediately: true);
 
   runApp(const MyApp());
@@ -75,8 +72,7 @@ class MyApp extends StatelessObserverWidget {
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       // used instead of home: because otherwise no pop page transition to the first screen will be applied
-      onGenerateRoute: (settings) =>
-          hasSeenOnboarding ? Routes.home : Routes.onboarding,
+      onGenerateRoute: (settings) => hasSeenOnboarding ? Routes.home : Routes.onboarding,
       theme: lightTheme,
       darkTheme: darkTheme,
       highContrastTheme: highContrastLightTheme,

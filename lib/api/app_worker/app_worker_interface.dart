@@ -6,6 +6,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_mvvm_architecture/base.dart';
 import 'package:get_it/get_it.dart';
 
+import '../../models/question_catalog/question_catalog.dart';
 import '/models/element_variants/element_identifier.dart';
 import '/models/authenticated_user.dart';
 import '/models/answer.dart';
@@ -27,8 +28,7 @@ class AppWorkerInterface extends Service implements Disposable {
   AppWorkerInterface._(this._worker);
 
   static Future<AppWorkerInterface> spawn() async {
-    final con =
-        await ServiceWorkerController.spawn<AppWorkerMessage>(AppWorker.new);
+    final con = await ServiceWorkerController.spawn<AppWorkerMessage>(AppWorker.new);
     return AppWorkerInterface._(con);
   }
 
@@ -65,8 +65,7 @@ class AppWorkerInterface extends Service implements Disposable {
   // element area related functions \\
 
   Future<void> queryElements(LatLngBounds bounds) {
-    return _worker
-        .send<void>(AppWorkerMessage(AppWorkerSubject.queryElements, bounds));
+    return _worker.send<void>(AppWorkerMessage(AppWorkerSubject.queryElements, bounds));
   }
 
   Stream<ElementUpdate> subscribeElements() {
@@ -114,9 +113,7 @@ class AppWorkerInterface extends Service implements Disposable {
     required AuthenticatedUser user,
     required Locale locale,
   }) {
-    return _worker.send<void>(AppWorkerMessage(
-        AppWorkerSubject.uploadQuestionnaire,
-        ElementUploadData(
+    return _worker.send<void>(AppWorkerMessage(AppWorkerSubject.uploadQuestionnaire, ElementUploadData(
           user: user,
           locale: locale,
         )));
@@ -141,17 +138,16 @@ class AppWorkerInterface extends Service implements Disposable {
     ));
   }
 
-  Future<void> updateQuestionCatalogPreferences(
-      {required bool excludeProfessional}) {
+  Future<void> updateQuestionCatalogPreferences({required bool excludeProfessional}) {
     return _worker.send<void>(AppWorkerMessage(
       AppWorkerSubject.updateQuestionCatalogPreferences,
       excludeProfessional,
     ));
   }
 
-  Future<void> readQuestionCatalog({required String questionCatalog}) {
+  Future<void> updateQuestionCatalog({required QuestionCatalog questionCatalog}) {
     return _worker
-        .send<void>(AppWorkerMessage(AppWorkerSubject.questionCatalog, questionCatalog));
+        .send<void>(AppWorkerMessage(AppWorkerSubject.updateQuestionCatalog, questionCatalog));
   }
 
   /// Close the service worker when un-registering this service.
