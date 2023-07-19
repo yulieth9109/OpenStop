@@ -7,7 +7,6 @@ import 'package:flutter/services.dart';
 import 'question_catalog.dart';
 
 class QuestionCatalogReader {
-  late Locale deviceLocale;
   final String defaultLocate;
 
   QuestionCatalogReader({this.defaultLocate = 'en'});
@@ -45,7 +44,7 @@ class QuestionCatalogReader {
 
     try {
       final jsonData = await rootBundle.load(path);
-      return json.decode(utf8.decode(jsonData.buffer.asUint8List()), reviver: reviver);
+      return json.decode(jsonData, reviver: reviver);
     } catch (e) {
       return const <String, dynamic>{};
     }
