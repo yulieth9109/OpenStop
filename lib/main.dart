@@ -5,7 +5,7 @@ import 'package:get_it/get_it.dart';
 import 'package:mobx/mobx.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'dart:ui' as ui;
+import 'dart:ui';
 
 import '/commons/themes.dart';
 import '/commons/app_config.dart' as app_config;
@@ -28,11 +28,9 @@ Future <void> main() async {
 
   final QuestionCatalogReader questionCatalogReader = QuestionCatalogReader();
 
-  ui.PlatformDispatcher.instance.onLocaleChanged = () async {
-    await questionCatalogReader.read();
+  PlatformDispatcher.instance.onLocaleChanged = () async {
+    await questionCatalogReader.read(false);
   };
-
-
 
   GetIt.I
       .registerSingleton<AppWorkerInterface>(futures[0] as AppWorkerInterface);
@@ -40,18 +38,15 @@ Future <void> main() async {
     PreferencesService(preferences: futures[1] as SharedPreferences),
   );
 
-  
-  GetIt.I.get<AppWorkerInterface>().updateQuestionCatalog(questionCatalog: await questionCatalogReader.read(),);
-
   // required because isolate cannot read assets
   // https://github.com/flutter/flutter/issues/96895
   Future.wait([rootBundle.load('assets/datasets/map_feature_collection.json')])
       .then(GetIt.I.get<AppWorkerInterface>().passAssets);
 
-  reaction((p0) => GetIt.I.get<PreferencesService>().isProfessional, (value) {
-    GetIt.I.get<AppWorkerInterface>().updateQuestionCatalogPreferences(
-      excludeProfessional: !value,
-    );
+  reaction((p0) => GetIt.I.get<PreferencesService>().isProfessional, (value) async {
+    GetIt.I.get<AppWorkerInterface>().updateQuestionCatalog(
+        questionCatalog: await questionCatalogReader.read(value),
+      );
   }, fireImmediately: true);
 
   runApp(const MyApp());
