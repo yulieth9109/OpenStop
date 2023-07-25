@@ -5,21 +5,20 @@ import '/models/question_catalog/question_definition.dart';
 import '/models/answer.dart';
 import 'element_variants/base_element.dart';
 
-
 class Questionnaire {
 
   Questionnaire({
     required ProcessedElement osmElement,
     required QuestionCatalog questionCatalog,
-  }) :
-    _questionCatalog = questionCatalog,
-    _osmElement = osmElement
+  }) : 
+    questionCatalogF = questionCatalog,
+    _osmElement = osmElement 
   {
     _updateWorkingElement();
     _insertMatchingEntries(afterIndex: -1);
   }
 
-  final QuestionCatalog _questionCatalog;
+  QuestionCatalog questionCatalogF;
 
   final List<QuestionnaireEntry> _entries = [];
 
@@ -29,24 +28,18 @@ class Questionnaire {
 
   int _activeIndex = 0;
 
-
   ProxyElement get workingElement => _workingElement;
 
-
   int get length => _entries.length;
-
 
   UnmodifiableListView<QuestionnaireEntry> get entries {
     return UnmodifiableListView(_entries);
   }
 
-
   int get activeIndex => _activeIndex;
-
 
   QuestionnaireEntry? get activeEntry =>
     _isValidIndex(_activeIndex) ? _entries[_activeIndex] : null;
-
 
   bool jumpTo(int index) {
     if (_isValidIndex(index) && index != _activeIndex) {
@@ -56,16 +49,13 @@ class Questionnaire {
     return false;
   }
 
-
   bool previous() {
     return jumpTo(_activeIndex - 1);
   }
 
-
   bool next() {
     return jumpTo(_activeIndex + 1);
   }
-
 
   void update<T extends Answer>(T? answer) {
     if (_isValidIndex(_activeIndex)) {
@@ -79,22 +69,19 @@ class Questionnaire {
     }
   }
 
-
   bool _isValidIndex(int index) {
     return index >= 0 && _entries.length > index;
   }
-
 
   void _updateWorkingElement() {
     _workingElement = _createWorkingElement();
   }
 
-
   void _insertMatchingEntries({ int? afterIndex }) {
     afterIndex ??= _activeIndex;
     // insert questions in reverse so questions that follow next in the catalog
     // also follow next in the questionnaire
-    for (final question in _questionCatalog.reversed) {
+    for (final question in questionCatalogF.reversed) {
       // get whether the question conditions matches the current working element
       final questionIsMatching = question.conditions.any((condition) {
         return condition.matches(_workingElement);
@@ -110,7 +97,6 @@ class Questionnaire {
       }
     }
   }
-
 
   void _removeObsoleteEntries() {
     // Note: do not use reverse iteration here
@@ -145,6 +131,11 @@ class Questionnaire {
     }
   }
 
+  Future<void> updateLanguage() async {
+    _entries.forEach((QuestionnaireEntry entry) {
+      entry.question = questionCatalogF[entry.question.runtimeId];
+    });
+  }
 
   /// Optionally specify a custom list of entries from which the working element is constructed.
 
@@ -155,13 +146,12 @@ class Questionnaire {
 
     return ProxyElement(_osmElement,
       additionalTags: changes.fold<Map<String, String>>(
-        {},
+        {}, 
         (tags, newTags) => tags..addAll(newTags)
       )
     );
   }
 }
-
 
 /// A [QuestionnaireEntry] delegates its equality to the underlying question.
 /// This means two [QuestionnaireEntry]s are equal if their underlying questions are equal,
@@ -172,7 +162,7 @@ class Questionnaire {
 class QuestionnaireEntry<T extends Answer> {
   QuestionnaireEntry(this.question, [this.answer]);
 
-  final QuestionDefinition question;
+  QuestionDefinition question;
   final T? answer;
 
   bool get hasValidAnswer => answer?.isValid == true;

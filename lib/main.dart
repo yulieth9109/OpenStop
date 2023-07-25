@@ -28,8 +28,17 @@ Future <void> main() async {
 
   final QuestionCatalogReader questionCatalogReader = QuestionCatalogReader();
 
+  const mainCatalogDirectory = 'question_catalog';
+
+  const professionalCatalogDirectory = 'advanced_question_catalog';
+
   PlatformDispatcher.instance.onLocaleChanged = () async {
-    await questionCatalogReader.read(false);
+    bool isProfessional = GetIt.I.get<PreferencesService>().isProfessional;
+    Iterable<String> assetPaths = [ mainCatalogDirectory, if (isProfessional) professionalCatalogDirectory];
+
+    GetIt.I.get<AppWorkerInterface>().updateQuestionCatalog(
+        questionCatalog: await questionCatalogReader.readAll(assetPaths),
+        onlyLanguageChange: true);
   };
 
   GetIt.I
@@ -43,10 +52,13 @@ Future <void> main() async {
   Future.wait([rootBundle.load('assets/datasets/map_feature_collection.json')])
       .then(GetIt.I.get<AppWorkerInterface>().passAssets);
 
+  //This will clear all pending questionnaires
   reaction((p0) => GetIt.I.get<PreferencesService>().isProfessional, (value) async {
+    Iterable<String> assetPaths = [ mainCatalogDirectory, if (value) professionalCatalogDirectory];
+
     GetIt.I.get<AppWorkerInterface>().updateQuestionCatalog(
-        questionCatalog: await questionCatalogReader.read(value),
-      );
+        questionCatalog: await questionCatalogReader.readAll(assetPaths),
+        onlyLanguageChange: false);
   }, fireImmediately: true);
 
   runApp(const MyApp());

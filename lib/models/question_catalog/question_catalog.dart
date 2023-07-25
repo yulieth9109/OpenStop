@@ -12,8 +12,10 @@ class QuestionCatalog with ListMixin<QuestionDefinition> {
   const QuestionCatalog(this._questions);
 
 
-  QuestionCatalog.fromJson(List<Map<String, dynamic>> json) :
-    _questions = json.indexed.map<QuestionDefinition>((q) => QuestionDefinition.fromJSON(q.$1, q.$2)).toList(growable: false);
+  QuestionCatalog.fromJson(Iterable<Map<String, dynamic>> json) :
+    _questions = json.indexed
+    .map<QuestionDefinition>((q) => QuestionDefinition.fromJSON(q.$1, q.$2)).
+    toList(growable: false);
 
   @override
   int get length => _questions.length;
@@ -55,4 +57,15 @@ class _ComparingIterator<T> implements Iterator<T> {
 
   @override
   T get current => _items[_index];
+}
+
+class CatalogUpdatedData {
+  final QuestionCatalog questionCatalog;
+
+  final bool onlyLanguageChange;
+
+  const CatalogUpdatedData({
+    required this.questionCatalog,
+    required this.onlyLanguageChange,
+  });
 }
