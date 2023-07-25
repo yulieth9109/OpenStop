@@ -28,9 +28,8 @@ Future <void> main() async {
 
   final QuestionCatalogReader questionCatalogReader = QuestionCatalogReader();
 
-  PlatformDispatcher.instance.onLocaleChanged = () async {
-    await questionCatalogReader.read(false);
-  };
+  const mainCatalogDirectory = 'assets/question_catalog';
+  const professionalCatalogDirectory = 'assets/advanced_question_catalog';
 
   GetIt.I
       .registerSingleton<AppWorkerInterface>(futures[0] as AppWorkerInterface);
@@ -38,15 +37,33 @@ Future <void> main() async {
     PreferencesService(preferences: futures[1] as SharedPreferences),
   );
 
+  PlatformDispatcher.instance.onLocaleChanged = () async {
+    final isProfessional = GetIt.I.get<PreferencesService>().isProfessional;
+    final assetPaths = [
+      mainCatalogDirectory,
+      if (isProfessional) professionalCatalogDirectory
+    ];
+
+    GetIt.I.get<AppWorkerInterface>().updateQuestionCatalog(
+        questionCatalog: await questionCatalogReader.readAll(assetPaths),
+        onlyLanguageChange: true);
+  };
+
   // required because isolate cannot read assets
   // https://github.com/flutter/flutter/issues/96895
   Future.wait([rootBundle.load('assets/datasets/map_feature_collection.json')])
       .then(GetIt.I.get<AppWorkerInterface>().passAssets);
 
+  // This will clear all pending questionnaires
   reaction((p0) => GetIt.I.get<PreferencesService>().isProfessional, (value) async {
+    final assetPaths = [
+      mainCatalogDirectory,
+      if (value) professionalCatalogDirectory
+    ];
+
     GetIt.I.get<AppWorkerInterface>().updateQuestionCatalog(
-        questionCatalog: await questionCatalogReader.read(value),
-      );
+        questionCatalog: await questionCatalogReader.readAll(assetPaths),
+        onlyLanguageChange: false);
   }, fireImmediately: true);
 
   runApp(const MyApp());
