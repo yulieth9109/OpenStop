@@ -11,14 +11,14 @@ class Questionnaire {
     required ProcessedElement osmElement,
     required QuestionCatalog questionCatalog,
   }) : 
-    questionCatalogF = questionCatalog,
+    _questionCatalog = questionCatalog,
     _osmElement = osmElement 
   {
     _updateWorkingElement();
     _insertMatchingEntries(afterIndex: -1);
   }
 
-  QuestionCatalog questionCatalogF;
+  QuestionCatalog _questionCatalog;
 
   final List<QuestionnaireEntry> _entries = [];
 
@@ -81,7 +81,7 @@ class Questionnaire {
     afterIndex ??= _activeIndex;
     // insert questions in reverse so questions that follow next in the catalog
     // also follow next in the questionnaire
-    for (final question in questionCatalogF.reversed) {
+    for (final question in _questionCatalog.reversed) {
       // get whether the question conditions matches the current working element
       final questionIsMatching = question.conditions.any((condition) {
         return condition.matches(_workingElement);
@@ -131,10 +131,16 @@ class Questionnaire {
     }
   }
 
-  Future<void> updateLanguage() async {
-    _entries.forEach((QuestionnaireEntry entry) {
-      entry.question = questionCatalogF[entry.question.runtimeId];
-    });
+  void updateQuestionCatalogLanguage(QuestionCatalog questionCatalog) {
+    assert(_questionCatalog.length == questionCatalog.length, 'Question catalogs are different while they should be of the same strucutre.');
+    _questionCatalog = questionCatalog;
+  
+    for (var i = 0; i < _entries.length; i++) {
+       _entries[i] = _entries[i].copyWith(question: _questionCatalog[_entries[i].question.runtimeId]
+          // find the question definition with the same id and replace it with the previous one
+          //question: _questionCatalog.firstWhere((q) => q == _entries[i].question),
+       );
+     }
   }
 
   /// Optionally specify a custom list of entries from which the working element is constructed.
@@ -146,7 +152,7 @@ class Questionnaire {
 
     return ProxyElement(_osmElement,
       additionalTags: changes.fold<Map<String, String>>(
-        {}, 
+        {},
         (tags, newTags) => tags..addAll(newTags)
       )
     );
@@ -160,10 +166,18 @@ class Questionnaire {
 /// optional answer value.
 
 class QuestionnaireEntry<T extends Answer> {
+
+  final QuestionDefinition question;
+  final T? answer;
+
   QuestionnaireEntry(this.question, [this.answer]);
 
-  QuestionDefinition question;
-  final T? answer;
+  QuestionnaireEntry copyWith({required QuestionDefinition question,T? answer}) { 
+    return  QuestionnaireEntry(
+              question = question,
+              answer = answer ?? this.answer,
+            );
+  }
 
   bool get hasValidAnswer => answer?.isValid == true;
 

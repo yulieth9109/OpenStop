@@ -132,8 +132,7 @@ mixin QuestionnaireHandler<M> on ServiceWorker<M>, QuestionCatalogHandler<M>, El
     if (_activeQuestionnaire != null) {
       if (_questionnaireStore.isFinished(_activeQuestionnaire!)) {
         _questionnaireStore.markAsUnfinished(_activeQuestionnaire!);
-      }
-      else {
+      } else {
         _activeQuestionnaire!.previous();
       }
       // notify change
@@ -151,7 +150,7 @@ mixin QuestionnaireHandler<M> on ServiceWorker<M>, QuestionCatalogHandler<M>, El
         _activeQuestionnaireStreamController.add(
           QuestionnaireRepresentation.derive(_activeQuestionnaire!),
         );
-      }
+      } 
       else if (_questionnaireStore.isUnfinished(_activeQuestionnaire!)) {
         _questionnaireStore.markAsFinished(_activeQuestionnaire!);
         // notify change
@@ -180,23 +179,25 @@ mixin QuestionnaireHandler<M> on ServiceWorker<M>, QuestionCatalogHandler<M>, El
   }
 
   @override
-  Future<void> updateQuestionCatalog(
-      CatalogUpdatedData questionCatalogData) async {
-    super.updateQuestionCatalog(questionCatalogData);
+  void updateQuestionCatalog(({QuestionCatalog questionCatalog, bool onlyLanguageChange}) questionCatalogChangeData) {
+    super.updateQuestionCatalog(questionCatalogChangeData);
 
-    if (questionCatalogData.onlyLanguageChange) {
-      //Update all QuestionDefinition of all the stored questionnares
-      _questionnaireStore.updateAll(await questionCatalog);
-      //Update current _activeQuestionnaire
+    if (questionCatalogChangeData.onlyLanguageChange) {
+      // Update all QuestionDefinition of all the stored questionnares
+      final questionnaireList = _questionnaireStore.items;
+
+      for (final Questionnaire questionnaire in questionnaireList) { 
+        questionnaire.updateQuestionCatalogLanguage(questionCatalogChangeData.questionCatalog);
+      }
+      // Update current _activeQuestionnaire
       if (_activeQuestionnaire != null) {
-        openQuestionnaire(_activeQuestionnaire!.workingElement);
         // notify change
-        /* _activeQuestionnaireStreamController.add(
+        _activeQuestionnaireStreamController.add(
           QuestionnaireRepresentation.derive(
             _activeQuestionnaire!,
             isCompleted: _questionnaireStore.isFinished(_activeQuestionnaire!),
           ),
-        ); */
+        );
       }
     } else {
       _questionnaireStore.clear();

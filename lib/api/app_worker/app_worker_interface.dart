@@ -138,11 +138,12 @@ class AppWorkerInterface extends Service implements Disposable {
   }
 
   Future<void> updateQuestionCatalog({required QuestionCatalog questionCatalog, required bool onlyLanguageChange}) {
-    return _worker
-        .send<void>(AppWorkerMessage(AppWorkerSubject.updateQuestionCatalog, CatalogUpdatedData(
+    return _worker.send<void>(AppWorkerMessage(
+      AppWorkerSubject.updateQuestionCatalog, (
       questionCatalog: questionCatalog,
       onlyLanguageChange: onlyLanguageChange,
-    )));
+      )
+    ));
   }
 
   /// Close the service worker when un-registering this service.
