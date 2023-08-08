@@ -5,6 +5,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:osm_api/osm_api.dart' as osmapi;
 
+import '/models/question_catalog/question_catalog.dart';
 import '/models/affected_elements_detector.dart';
 import '/models/element_variants/element_identifier.dart';
 import '/models/map_feature_collection.dart';
@@ -45,16 +46,28 @@ mixin ElementHandler<M> on ServiceWorker<M>, StopAreaHandler<M>, MapFeatureHandl
       _buildFiltersForStopAreas(loadedStopAreas),
       Stream.fromIterable(_elementPool.elements),
     );
-    final elementUpdates = existingElements.map((element) => ElementUpdate.derive(
-      element, mfCollection, matches: true,
-    ));
-    return controller.addStream(elementUpdates);
+    final elementUpdates =
+        existingElements.map((element) => ElementRepresentation.derive(element, mfCollection,));
+    return controller.add(ElementUpdate.derive(elementUpdates as List<ElementRepresentation>, ElementUpdateAction.update));
   });
+
+  @override
+  void updateQuestionCatalog(({QuestionCatalog questionCatalog, bool onlyLanguageChange}) questionCatalogChangeData) async {
+    // Should I call here super.updateQuestionCatalog(questionCatalogChangeData) I got an message from dart ;
+    final mfCollection = await mapFeatureCollection;
+    final existingElements = _filterElements(
+      _buildFiltersForStopAreas(loadedStopAreas),
+      Stream.fromIterable(_elementPool.elements),
+    );
+    final list = await existingElements.toList();
+    final elementUpdates = list.map((element) => ElementRepresentation.derive(element, mfCollection,)) as List<ElementRepresentation>;
+    _elementStreamController.add(ElementUpdate.derive(elementUpdates,ElementUpdateAction.clear));
+    _elementStreamController.add(ElementUpdate.derive(elementUpdates,ElementUpdateAction.update));
+  }
 
   final _elementPool = OSMElementProcessor();
 
   final _osmElementQueryHandler = OSMElementQueryAPI();
-
 
   /// Retrieves all stop areas in the given bounds and queries the elements for any unloaded stop area.
   ///
@@ -72,12 +85,11 @@ mixin ElementHandler<M> on ServiceWorker<M>, StopAreaHandler<M>, MapFeatureHandl
         _buildFiltersForStopArea(stopArea), elements,
       );
       // construct element updates
-      final elementUpdates = filteredElements.map((element) => ElementUpdate.derive(
-        element, mfCollection, matches: true,
-      ));
+      final elementUpdates = ElementUpdate.derive(
+          filteredElements.map((element) => ElementRepresentation.derive(element, mfCollection,)) as List<ElementRepresentation>, ElementUpdateAction.update);
       // add newly queried elements to stream
       futures.add(
-        elementUpdates.forEach(_elementStreamController.add),
+        _elementStreamController.add(elementUpdates) as Future<void>,
       );
     }
     // used to only complete this function once all queries and processing is completed
@@ -119,7 +131,6 @@ mixin ElementHandler<M> on ServiceWorker<M>, StopAreaHandler<M>, MapFeatureHandl
     return _elementPool.find(elementIdentifier.type, elementIdentifier.id);
   }
 
-
   /// Uploads a given element.
   /// Sends update events for the given element and its dependents.
   ///
@@ -159,13 +170,16 @@ mixin ElementHandler<M> on ServiceWorker<M>, StopAreaHandler<M>, MapFeatureHandl
         .followedBy([AffectedElementsRecord(
           element: element.original,
           matches: QuestionFilter(questionCatalog: qCatalog).matches(element),
-        )])
-        // send update messages to the main thread
-        .map((record) => ElementUpdate.derive(record.element, mfCollection, matches: record.matches))
-        .forEach(_elementStreamController.add);
+        )]);
+
+          // // send update messages to the main thread
+          // // pendent to discuss
+        // .map((record) => ElementUpdate.derive(record.element, mfCollection,
+        // matches: record.matches))
+        // .forEach(_elementStreamController.add); 
 
       return true;
-    }
+    } 
     catch(e) {
       return false;
     }
@@ -209,7 +223,6 @@ mixin ElementHandler<M> on ServiceWorker<M>, StopAreaHandler<M>, MapFeatureHandl
   }
 }
 
-
 class ElementRepresentation extends ElementIdentifier {
   @override
   final int id;
@@ -241,17 +254,16 @@ class ElementRepresentation extends ElementIdentifier {
   }
 }
 
+enum ElementUpdateAction { update, remove, clear }
+
 class ElementUpdate {
-  final ElementRepresentation element;
-  final bool matches;
+  final List<ElementRepresentation> elements;
+  final ElementUpdateAction action;
 
   const ElementUpdate({
-    required this.element,
-    required this.matches,
+    required this.elements,
+    required this.action,
   });
 
-  ElementUpdate.derive(ProcessedElement element, MapFeatureCollection mapFeatureCollection, {required this.matches}) :
-    element = ElementRepresentation.derive(
-      element, mapFeatureCollection,
-    );
+  ElementUpdate.derive(this.elements, this.action);
 }
