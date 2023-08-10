@@ -46,24 +46,31 @@ mixin ElementHandler<M> on ServiceWorker<M>, StopAreaHandler<M>, MapFeatureHandl
       _buildFiltersForStopAreas(loadedStopAreas),
       Stream.fromIterable(_elementPool.elements),
     );
-    final elementUpdates =
-        existingElements.map((element) => ElementRepresentation.derive(element, mfCollection,));
-    return controller.add(ElementUpdate.derive(elementUpdates as List<ElementRepresentation>, ElementUpdateAction.update));
+
+    final List<ElementRepresentation>  elementUpdates = [];
+    final elementlist = existingElements.map((element) => ElementRepresentation.derive(
+      element, mfCollection,
+    ));
+    elementlist.forEach(elementUpdates.add);
+    
+    return controller.add(ElementUpdate.derive(elementUpdates, ElementUpdateAction.update));
   });
 
   @override
   void updateQuestionCatalog(({QuestionCatalog questionCatalog, bool onlyLanguageChange}) questionCatalogChangeData) async {
-    // Should I call here super.updateQuestionCatalog(questionCatalogChangeData) I got an message from dart ;
+    super.updateQuestionCatalog(questionCatalogChangeData);
+    print('Element_handler');
     final mfCollection = await mapFeatureCollection;
     final existingElements = _filterElements(
       _buildFiltersForStopAreas(loadedStopAreas),
       Stream.fromIterable(_elementPool.elements),
     );
     final list = await existingElements.toList();
-    final elementUpdates = list.map((element) => ElementRepresentation.derive(element, mfCollection,)) as List<ElementRepresentation>;
-    _elementStreamController.add(ElementUpdate.derive(elementUpdates,ElementUpdateAction.clear));
-    _elementStreamController.add(ElementUpdate.derive(elementUpdates,ElementUpdateAction.update));
-  }
+    final List<ElementRepresentation>  elementUpdates = [];
+    list.map((element) => elementUpdates.add(ElementRepresentation.derive(element, mfCollection,)));
+    _elementStreamController.add(ElementUpdate.derive(elementUpdates, ElementUpdateAction.clear));
+    _elementStreamController.add(ElementUpdate.derive(elementUpdates, ElementUpdateAction.update));
+  } 
 
   final _elementPool = OSMElementProcessor();
 
@@ -85,12 +92,15 @@ mixin ElementHandler<M> on ServiceWorker<M>, StopAreaHandler<M>, MapFeatureHandl
         _buildFiltersForStopArea(stopArea), elements,
       );
       // construct element updates
-      final elementUpdates = ElementUpdate.derive(
-          filteredElements.map((element) => ElementRepresentation.derive(element, mfCollection,)) as List<ElementRepresentation>, ElementUpdateAction.update);
+      final List<ElementRepresentation>  elementUpdates = [];
+      filteredElements.map((element) => elementUpdates.add(ElementRepresentation.derive(element, mfCollection,)));
       // add newly queried elements to stream
-      futures.add(
-        _elementStreamController.add(elementUpdates) as Future<void>,
-      );
+      if (elementUpdates.isNotEmpty){
+        futures.add(
+          _elementStreamController.add(ElementUpdate.derive(elementUpdates, ElementUpdateAction.update)) as Future<void>,
+        );
+      }
+      
     }
     // used to only complete this function once all queries and processing is completed
     // and also to forward any errors (especially query errors)
@@ -153,6 +163,9 @@ mixin ElementHandler<M> on ServiceWorker<M>, StopAreaHandler<M>, MapFeatureHandl
     try {
       // upload element and detect elements that are affected by this change
       final diffDetector = AffectedElementsDetector(questionCatalog: qCatalog);
+      final List<ElementRepresentation>  deleteElements = [];
+      final List<ElementRepresentation>  addElements = [];
+
       diffDetector.takeSnapshot(element.original);
       await element.publish(uploadAPI);
       final affectedElements = diffDetector.takeSnapshot(element.original);
@@ -170,13 +183,23 @@ mixin ElementHandler<M> on ServiceWorker<M>, StopAreaHandler<M>, MapFeatureHandl
         .followedBy([AffectedElementsRecord(
           element: element.original,
           matches: QuestionFilter(questionCatalog: qCatalog).matches(element),
-        )]);
+        )])
 
-          // // send update messages to the main thread
-          // // pendent to discuss
-        // .map((record) => ElementUpdate.derive(record.element, mfCollection,
-        // matches: record.matches))
-        // .forEach(_elementStreamController.add); 
+        // send update messages to the main thread
+        // pendent to discuss
+        .map((record) {
+          final elementToUpdate = ElementRepresentation.derive(record.element, mfCollection);
+
+          if (!record.matches) {
+            deleteElements.add(elementToUpdate);
+          }
+          else {
+            addElements.add(elementToUpdate);
+          }
+        });
+        
+        _elementStreamController.add(ElementUpdate.derive(deleteElements,ElementUpdateAction.remove));
+        _elementStreamController.add(ElementUpdate.derive(addElements,ElementUpdateAction.update));
 
       return true;
     } 
