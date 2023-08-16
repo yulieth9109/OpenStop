@@ -75,28 +75,21 @@ class _OsmElementLayerState extends State<OsmElementLayer> {
 
   void _handleElementChange(ElementUpdate change) {
     setState(() {
-      if (change.action == ElementUpdateAction.clear){
-        final Iterable<ElementRepresentation> elements = _superCluster.points;
-
-        for (ElementRepresentation element in elements) {
-          _superCluster.remove(element);
-        } 
+     if (change.action == ElementUpdateAction.clear) {
+        _superCluster.load([]);
       }
       else {
-        change.elements.forEach((element) { 
-
           if (change.action == ElementUpdateAction.update) {
-            if (_superCluster.containsPoint(element)) {
-              _superCluster.modifyPointData(element, element);
+            if (_superCluster.containsPoint(change.element!)) {
+              _superCluster.modifyPointData(change.element!, change.element!);
             }
             else {
-              _superCluster.insert(element);
+              _superCluster.insert(change.element!);
             }
           } 
-          else if (change.action == ElementUpdateAction.remove){
-            _superCluster.remove(element);
+          else if (change.action == ElementUpdateAction.remove) {
+            _superCluster.remove(change.element!);
           }
-        });
       }
     });
   }
