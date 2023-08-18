@@ -64,9 +64,10 @@ mixin ElementHandler<M> on ServiceWorker<M>, StopAreaHandler<M>, MapFeatureHandl
       _buildFiltersForStopAreas(loadedStopAreas),
       Stream.fromIterable(_elementPool.elements),
     );
-    _elementStreamController.add(const ElementUpdate(element: null, action: ElementUpdateAction.clear));
-    existingElements.map((element) => ElementUpdate.derive(element, mfCollection, action: ElementUpdateAction.update))
-    .forEach(_elementStreamController.add);
+    _elementStreamController.add(const ElementUpdate(action: ElementUpdateAction.clear));
+    existingElements
+      .map((element) => ElementUpdate.derive(element, mfCollection, action: ElementUpdateAction.update))
+      .forEach(_elementStreamController.add);
   }
 
   /// Retrieves all stop areas in the given bounds and queries the elements for any unloaded stop area.
@@ -261,8 +262,7 @@ class ElementUpdate {
   final ElementUpdateAction action;
 
   const ElementUpdate({
-    required this.element,
-    required this.action,
+    required this.action, this.element,
   });
 
   ElementUpdate.derive(ProcessedElement element, MapFeatureCollection mapFeatureCollection, {required this.action}) :
