@@ -5,13 +5,14 @@ import 'package:get_it/get_it.dart';
 import 'package:mobx/mobx.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'dart:ui';
 
 import '/commons/themes.dart';
 import '/commons/app_config.dart' as app_config;
 import '/commons/routes.dart';
 import '/api/preferences_service.dart';
 import '/api/app_worker/app_worker_interface.dart';
-
+import 'models/question_catalog/question_catalog_reader.dart';
 
 Future <void> main() async {
   // this is required to run flutter dependent code before runApp is called
@@ -25,27 +26,48 @@ Future <void> main() async {
     SharedPreferences.getInstance(),
   ]);
 
-  GetIt.I.registerSingleton<AppWorkerInterface>(futures[0] as AppWorkerInterface);
+  final QuestionCatalogReader questionCatalogReader = QuestionCatalogReader();
+
+  const mainCatalogDirectory = 'assets/question_catalog';
+  const professionalCatalogDirectory = 'assets/advanced_question_catalog';
+
+  GetIt.I
+      .registerSingleton<AppWorkerInterface>(futures[0] as AppWorkerInterface);
   GetIt.I.registerSingleton<PreferencesService>(
     PreferencesService(preferences: futures[1] as SharedPreferences),
   );
 
+  PlatformDispatcher.instance.onLocaleChanged = () async {
+    final isProfessional = GetIt.I.get<PreferencesService>().isProfessional;
+    final assetPaths = [
+      mainCatalogDirectory,
+      if (isProfessional) professionalCatalogDirectory
+    ];
+
+    GetIt.I.get<AppWorkerInterface>().updateQuestionCatalog(
+        questionCatalog: await questionCatalogReader.readAll(assetPaths),
+        onlyLanguageChange: true);
+  };
+
   // required because isolate cannot read assets
   // https://github.com/flutter/flutter/issues/96895
-  Future.wait([
-    rootBundle.load('assets/datasets/map_feature_collection.json'),
-    rootBundle.load('assets/datasets/question_catalog.json'),
-  ]).then(GetIt.I.get<AppWorkerInterface>().passAssets);
+  Future.wait([rootBundle.load('assets/datasets/map_feature_collection.json')])
+      .then(GetIt.I.get<AppWorkerInterface>().passAssets);
 
-  reaction((p0) => GetIt.I.get<PreferencesService>().isProfessional, (value) {
-    GetIt.I.get<AppWorkerInterface>().updateQuestionCatalogPreferences(
-      excludeProfessional: !value,
-    );
+  // This will clear all pending questionnaires
+  reaction((p0) => GetIt.I.get<PreferencesService>().isProfessional, (value) async {
+    final assetPaths = [
+      mainCatalogDirectory,
+      if (value) professionalCatalogDirectory
+    ];
+
+    GetIt.I.get<AppWorkerInterface>().updateQuestionCatalog(
+        questionCatalog: await questionCatalogReader.readAll(assetPaths),
+        onlyLanguageChange: false);
   }, fireImmediately: true);
 
   runApp(const MyApp());
 }
-
 
 class MyApp extends StatelessObserverWidget {
   const MyApp({super.key});
